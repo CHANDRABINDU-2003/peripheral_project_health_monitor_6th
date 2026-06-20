@@ -1,0 +1,75 @@
+{
+  "feature_columns": [
+    "Heart Rate",
+    "Respiratory Rate",
+    "Body Temperature",
+    "Oxygen Saturation",
+    "Systolic Blood Pressure",
+    "Diastolic Blood Pressure",
+    "Age",
+    "Gender",
+    "Weight (kg)",
+    "Height (m)",
+    "Derived_HRV",
+    "Derived_Pulse_Pressure",
+    "Derived_BMI",
+    "Derived_MAP"
+  ],
+  "target_column": "Risk Category",
+  "label_map": {
+    "0": "Low Risk",
+    "1": "High Risk"
+  },
+  "scaler_path": "models/scaler.joblib",
+  "rf_model_path": "models/rf_model.joblib",
+  "xgb_model_path": "models/xgb_model.joblib",
+  "rf_metrics": {
+    "accuracy": 1.0,
+    "roc_auc": 1.0,
+    "f1_weighted": 1.0,
+    "f1_high_risk": 1.0
+  },
+  "xgb_metrics": {
+    "accuracy": 0.9969,
+    "roc_auc": 1.0,
+    "f1_weighted": 0.9969,
+    "f1_high_risk": 0.9971
+  },
+  "rf_cv_auc_mean": 1.0,
+  "xgb_cv_auc_mean": 1.0,
+  "best_model": "RandomForest",
+  "training_rows": 160016,
+  "test_rows": 40004,
+  "rf_feature_importance": {
+    "Heart Rate": 0.333,
+    "Respiratory Rate": 0.0008,
+    "Body Temperature": 0.001,
+    "Oxygen Saturation": 0.001,
+    "Systolic Blood Pressure": 0.0005,
+    "Diastolic Blood Pressure": 0.0005,
+    "Age": 0.0007,
+    "Gender": 0.0,
+    "Weight (kg)": 0.0936,
+    "Height (m)": 0.076,
+    "Derived_HRV": 0.001,
+    "Derived_Pulse_Pressure": 0.0006,
+    "Derived_BMI": 0.4907,
+    "Derived_MAP": 0.0006
+  },
+  "xgb_feature_importance": {
+    "Heart Rate": 0.4041000008583069,
+    "Respiratory Rate": 0.0008999999845400453,
+    "Body Temperature": 0.000699999975040555,
+    "Oxygen Saturation": 0.0007999999797903001,
+    "Systolic Blood Pressure": 0.0007999999797903001,
+    "Diastolic Blood Pressure": 0.0007999999797903001,
+    "Age": 0.000699999975040555,
+    "Gender": 0.0,
+    "Weight (kg)": 0.04500000178813934,
+    "Height (m)": 0.04520000144839287,
+    "Derived_HRV": 0.000699999975040555,
+    "Derived_Pulse_Pressure": 0.0008999999845400453,
+    "Derived_BMI": 0.49880000948905945,
+    "Derived_MAP": 0.000699999975040555
+  }
+}

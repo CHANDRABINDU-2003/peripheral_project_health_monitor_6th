@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Patient {
+  patient_id Int            @id @default(autoincrement())
+  name       String         @db.VarChar(255)
+  age        Int
+  gender     String         @db.VarChar(20)
+  height     Decimal        @db.Decimal(6, 2)
+  weight     Decimal        @db.Decimal(6, 2)
+  address    String?
+  phone      String?        @db.VarChar(20)
+  email      String         @unique @db.VarChar(255)
+  password   String         @db.VarChar(255)
+  created_at DateTime?      @default(now()) @db.Timestamp(6)
+  reports    HealthReport[]
+  emergency_contacts EmergencyContact[]
+  devices    Device[]
+
+  @@index([email], map: "idx_patients_email")
+  @@map("patients")
+}
+
+model Device {
+  device_id   Int       @id @default(autoincrement())
+  patient_id  Int
+  label       String?   @db.VarChar(120)   // e.g. "Bed 4 ESP32", "Ward Pi #2"
+  device_type String    @db.VarChar(20)    // "esp32" | "raspberry_pi"
+  api_key     String    @unique @db.VarChar(120) // secret the board sends in X-Device-Key
+  active      Boolean   @default(true)
+  last_seen   DateTime? @db.Timestamp(6)
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  patient     Patient   @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([api_key], map: "idx_devices_api_key")
+  @@index([patient_id], map: "idx_devices_patient_id")
+  @@map("devices")
+}
+
+model EmergencyContact {
+  contact_id   Int      @id @default(autoincrement())
+  patient_id   Int
+  name         String   @db.VarChar(255)
+  relationship String?  @db.VarChar(60)
+  phone        String   @db.VarChar(20)
+  created_at   DateTime? @default(now()) @db.Timestamp(6)
+  patient      Patient  @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([patient_id], map: "idx_emergency_contacts_patient_id")
+  @@map("emergency_contacts")
+}
+
+model HealthReport {
+  report_id        Int       @id @default(autoincrement())
+  patient_id       Int
+  heart_rate       Decimal   @db.Decimal(5, 1)
+  temperature      Decimal   @db.Decimal(5, 2)
+  oxygen           Decimal   @db.Decimal(5, 2)
+  fall_detected    Boolean?  @default(false)
+  respiratory_rate Decimal?  @db.Decimal(5, 1)
+  systolic_bp      Decimal?  @db.Decimal(5, 1)
+  diastolic_bp     Decimal?  @db.Decimal(5, 1)
+  prediction       String    @db.VarChar(20)
+  recommendation   String
+  probability      Decimal?  @db.Decimal(5, 4)
+  model_used       String?   @db.VarChar(60)
+  source           String    @default("manual") @db.VarChar(20)  // "manual" | "device"
+  device_id        Int?                                          // which board sent it (null = manual)
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+  patient          Patient   @relation(fields: [patient_id], references: [patient_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "idx_reports_created_at")
+  @@index([patient_id], map: "idx_reports_patient_id")
+  @@map("health_reports")
+}

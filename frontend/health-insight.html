@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Health Insight — Patient Monitoring System</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .insight-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 2rem;
+    }
+    .insight-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 1.4rem 1.5rem;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(26,58,92,0.06);
+      position: relative;
+      overflow: hidden;
+    }
+    .insight-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: var(--blue);
+    }
+    .insight-card .ic-icon { font-size: 1.4rem; }
+    .insight-card .ic-val  { font-size: 1.7rem; font-weight: 700; color: var(--navy); margin-top: 0.4rem; line-height: 1.2; }
+    .insight-card .ic-sub  { font-size: 0.78rem; color: var(--slate); margin-top: 0.2rem; }
+    .insight-card .ic-lbl  { font-size: 0.75rem; color: var(--slate); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.3rem; }
+
+    .ic-score::before     { background: linear-gradient(90deg, var(--success), #34d399); }
+    .ic-high::before      { background: linear-gradient(90deg, var(--danger), #f87171); }
+    .ic-low::before       { background: linear-gradient(90deg, var(--success), #6ee7b7); }
+    .ic-hr::before        { background: linear-gradient(90deg, var(--rose), var(--rose-light)); }
+    .ic-temp::before      { background: linear-gradient(90deg, #D98E04, #fbbf24); }
+    .ic-o2::before        { background: linear-gradient(90deg, var(--blue), var(--blue-light)); }
+
+    .score-ring {
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0.4rem 0;
+      font-size: 1.8rem; font-weight: 700; color: var(--navy);
+      background: conic-gradient(var(--success) 0deg, var(--ice) 0deg);
+    }
+
+    .section-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 1.6rem 1.7rem;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(26,58,92,0.06);
+      margin-bottom: 2rem;
+    }
+    .section-card > h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 0.3rem;
+    }
+    .section-card > p.muted { font-size: 0.85rem; color: var(--slate); margin-bottom: 1.3rem; }
+
+    .contact-row {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1.2fr;
+      gap: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .contact-row .field label {
+      display: block;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--navy);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.35rem;
+    }
+    .contact-row .field input {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1.5px solid var(--slate-light);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      color: var(--text-dark);
+      font-family: inherit;
+    }
+    .contact-row .field input:focus { outline: none; border-color: var(--blue); }
+    .contact-label {
+      font-size: 0.8rem; font-weight: 700; color: var(--navy);
+      margin: 0.5rem 0 0.6rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .contact-divider { height: 1px; background: var(--line); margin: 1.2rem 0; }
+
+    .saved-contacts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.4rem; }
+    .saved-contact {
+      background: var(--blue-pale);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      border-left: 3px solid var(--blue);
+    }
+    .saved-contact .sc-name { font-weight: 700; color: var(--navy); }
+    .saved-contact .sc-rel  { font-size: 0.78rem; color: var(--slate); }
+    .saved-contact .sc-phone { font-size: 0.95rem; color: var(--text-dark); margin-top: 0.4rem; display: flex; align-items: center; gap: 0.4rem; }
+
+    @media (max-width: 700px) {
+      .contact-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="brand-icon">🏥</div>
+      PatientMonitor
+    </div>
+    <div class="navbar-nav">
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <a href="current-condition.html" class="nav-link">Current Condition</a>
+      <a href="previous-history.html" class="nav-link">History</a>
+      <a href="health-insight.html" class="nav-link active">Health Insight</a>
+      <a href="reports.html" class="nav-link">Reports</a>
+    </div>
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <div class="navbar-user">
+        <div class="avatar" id="navAvatar">—</div>
+      </div>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-content">
+      <h1>Health Insight</h1>
+      <p id="insightSubtitle">Your health analytics for this month.</p>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- Health Analytics -->
+    <div class="section-heading">
+      <h2>Health Analytics</h2>
+      <span class="text-sm text-slate" id="monthBadge">—</span>
+    </div>
+
+    <div id="analyticsEmpty" class="empty-state" style="display:none;">
+      <div class="empty-icon">📊</div>
+      <p>No reports submitted this month yet. Add a report to see your analytics.</p>
+      <a href="reports.html" class="btn btn-primary" style="margin-top:1rem;">Submit Report</a>
+    </div>
+
+    <div class="insight-grid" id="analyticsGrid">
+      <div class="insight-card ic-hr">
+        <div class="ic-icon">❤️</div>
+        <div class="ic-val" id="avgHr">—</div>
+        <div class="ic-lbl">Average Heart Rate</div>
+      </div>
+      <div class="insight-card ic-temp">
+        <div class="ic-icon">🌡️</div>
+        <div class="ic-val" id="avgTemp">—</div>
+        <div class="ic-lbl">Average Temperature</div>
+      </div>
+      <div class="insight-card ic-o2">
+        <div class="ic-icon">💧</div>
+        <div class="ic-val" id="avgO2">—</div>
+        <div class="ic-lbl">Average Oxygen</div>
+      </div>
+      <div class="insight-card ic-high">
+        <div class="ic-icon">⚠️</div>
+        <div class="ic-val" id="highRiskDate">—</div>
+        <div class="ic-sub" id="highRiskScore"></div>
+        <div class="ic-lbl">Highest Risk Date</div>
+      </div>
+      <div class="insight-card ic-low">
+        <div class="ic-icon">✅</div>
+        <div class="ic-val" id="lowRiskDate">—</div>
+        <div class="ic-sub" id="lowRiskScore"></div>
+        <div class="ic-lbl">Lowest Risk Date</div>
+      </div>
+      <div class="insight-card ic-score">
+        <div class="ic-icon">🩺</div>
+        <div class="ic-val" id="healthScore">—</div>
+        <div class="ic-sub">out of 100 · higher is better</div>
+        <div class="ic-lbl">Monthly Health Score</div>
+      </div>
+    </div>
+
+    <!-- Family Emergency Contacts -->
+    <div class="section-heading">
+      <h2>Family Emergency Contacts</h2>
+    </div>
+    <div class="section-card">
+      <p class="muted">Add up to 2 phone numbers of family or friends to contact in an emergency.</p>
+
+      <!-- Currently saved -->
+      <div class="saved-contacts" id="savedContacts" style="display:none;"></div>
+
+      <div class="contact-divider" id="savedDivider" style="display:none;"></div>
+
+      <form id="contactsForm">
+        <div class="contact-label">👤 Emergency Contact 1</div>
+        <div class="contact-row">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" id="c1Name" placeholder="e.g. John Doe" />
+          </div>
+          <div class="field">
+            <label>Relationship</label>
+            <input type="text" id="c1Rel" placeholder="e.g. Brother" />
+          </div>
+          <div class="field">
+            <label>Phone Number</label>
+            <input type="tel" id="c1Phone" placeholder="e.g. +1 555 123 4567" />
+          </div>
+        </div>
+
+        <div class="contact-label">👥 Emergency Contact 2</div>
+        <div class="contact-row">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" id="c2Name" placeholder="e.g. Jane Smith" />
+          </div>
+          <div class="field">
+            <label>Relationship</label>
+            <input type="text" id="c2Rel" placeholder="e.g. Friend" />
+          </div>
+          <div class="field">
+            <label>Phone Number</label>
+            <input type="tel" id="c2Phone" placeholder="e.g. +1 555 987 6543" />
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save Contacts</button>
+      </form>
+    </div>
+
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+
+    function logout() {
+      localStorage.removeItem('patient');
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+    }
+
+    function showToast(msg, type='info') {
+      const tc = document.getElementById('toastContainer');
+      const t  = document.createElement('div');
+      t.className = `toast toast-${type}`;
+      const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+      t.innerHTML = (icons[type] || 'ℹ️') + ' ' + msg;
+      tc.appendChild(t);
+      setTimeout(() => { t.classList.add('hiding'); setTimeout(()=>t.remove(), 300); }, 3500);
+    }
+
+    function authHeaders() {
+      return { 'Authorization': 'Bearer ' + localStorage.getItem('token') };
+    }
+
+    function fmtDate(ds) {
+      if (!ds) return '—';
+      const d = new Date(ds);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function setScoreRing(score) {
+      const el = document.getElementById('healthScore');
+      el.textContent = (score == null) ? '—' : score;
+      // colour the card accent already handled by CSS; just show number
+    }
+
+    async function loadInsights() {
+      try {
+        const res = await fetch(`${API_BASE}/patient/health-insights`, { headers: authHeaders() });
+        if (!res.ok) throw new Error('fetch failed');
+        const d = await res.json();
+
+        document.getElementById('monthBadge').textContent = d.month || '';
+        document.getElementById('insightSubtitle').textContent =
+          `Your health analytics for ${d.month || 'this month'}.`;
+
+        if (!d.report_count) {
+          document.getElementById('analyticsGrid').style.display = 'none';
+          document.getElementById('analyticsEmpty').style.display = '';
+          return;
+        }
+
+        document.getElementById('avgHr').innerHTML   = d.avg_heart_rate  + ' <small style="font-size:0.85rem;color:var(--slate);">bpm</small>';
+        document.getElementById('avgTemp').innerHTML = d.avg_temperature + ' <small style="font-size:0.85rem;color:var(--slate);">°F</small>';
+        document.getElementById('avgO2').innerHTML   = d.avg_oxygen      + ' <small style="font-size:0.85rem;color:var(--slate);">%</small>';
+
+        document.getElementById('highRiskDate').textContent  = fmtDate(d.highest_risk && d.highest_risk.date);
+        document.getElementById('highRiskScore').textContent = d.highest_risk ? ('Risk score: ' + d.highest_risk.score + '/100') : '';
+        document.getElementById('lowRiskDate').textContent   = fmtDate(d.lowest_risk && d.lowest_risk.date);
+        document.getElementById('lowRiskScore').textContent  = d.lowest_risk ? ('Risk score: ' + d.lowest_risk.score + '/100') : '';
+
+        setScoreRing(d.monthly_health_score);
+      } catch {
+        showToast('Could not load health analytics.', 'error');
+      }
+    }
+
+    function renderSavedContacts(contacts) {
+      const wrap = document.getElementById('savedContacts');
+      const divider = document.getElementById('savedDivider');
+      if (!contacts || !contacts.length) {
+        wrap.style.display = 'none';
+        divider.style.display = 'none';
+        return;
+      }
+      wrap.style.display = '';
+      divider.style.display = '';
+      wrap.innerHTML = contacts.map(c => `
+        <div class="saved-contact">
+          <div class="sc-name">${c.name}</div>
+          <div class="sc-rel">${c.relationship || 'Emergency contact'}</div>
+          <div class="sc-phone">📞 <a href="tel:${c.phone}">${c.phone}</a></div>
+        </div>`).join('');
+    }
+
+    function fillForm(contacts) {
+      const c1 = contacts[0] || {};
+      const c2 = contacts[1] || {};
+      document.getElementById('c1Name').value  = c1.name || '';
+      document.getElementById('c1Rel').value   = c1.relationship || '';
+      document.getElementById('c1Phone').value = c1.phone || '';
+      document.getElementById('c2Name').value  = c2.name || '';
+      document.getElementById('c2Rel').value   = c2.relationship || '';
+      document.getElementById('c2Phone').value = c2.phone || '';
+    }
+
+    async function loadContacts() {
+      try {
+        const res = await fetch(`${API_BASE}/patient/emergency-contacts`, { headers: authHeaders() });
+        if (!res.ok) throw new Error('fetch failed');
+        const contacts = await res.json();
+        renderSavedContacts(contacts);
+        fillForm(contacts);
+      } catch {
+        showToast('Could not load emergency contacts.', 'error');
+      }
+    }
+
+    async function saveContacts(e) {
+      e.preventDefault();
+      const contacts = [
+        { name: document.getElementById('c1Name').value, relationship: document.getElementById('c1Rel').value, phone: document.getElementById('c1Phone').value },
+        { name: document.getElementById('c2Name').value, relationship: document.getElementById('c2Rel').value, phone: document.getElementById('c2Phone').value }
+      ].filter(c => c.name.trim() && c.phone.trim());
+
+      // Validate: a contact with a name needs a phone and vice-versa
+      for (let i = 1; i <= 2; i++) {
+        const n = document.getElementById('c' + i + 'Name').value.trim();
+        const p = document.getElementById('c' + i + 'Phone').value.trim();
+        if ((n && !p) || (!n && p)) {
+          showToast(`Contact ${i}: please provide both a name and a phone number.`, 'warning');
+          return;
+        }
+      }
+
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      try {
+        const res = await fetch(`${API_BASE}/patient/emergency-contacts`, {
+          method: 'PUT',
+          headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contacts })
+        });
+        if (!res.ok) throw new Error('save failed');
+        const data = await res.json();
+        renderSavedContacts(data.contacts);
+        fillForm(data.contacts);
+        showToast('Emergency contacts saved.', 'success');
+      } catch {
+        showToast('Failed to save emergency contacts.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Save Contacts';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const patient = JSON.parse(localStorage.getItem('patient') || 'null');
+      const token   = localStorage.getItem('token');
+      if (!patient || !token) { window.location.href = 'login.html'; return; }
+
+      const initials = patient.name ? patient.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '?';
+      document.getElementById('navAvatar').textContent = initials;
+
+      document.getElementById('contactsForm').addEventListener('submit', saveContacts);
+
+      loadInsights();
+      loadContacts();
+    });
+  </script>
+</body>
+</html>

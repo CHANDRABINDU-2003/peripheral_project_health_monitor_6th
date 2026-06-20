@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Patient Monitoring System</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .login-form { display: flex; flex-direction: column; gap: 1.1rem; }
+    .forgot-link {
+      font-size: 0.8rem;
+      color: var(--blue);
+      text-align: right;
+      margin-top: -0.6rem;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .forgot-link:hover { color: var(--rose); }
+    .btn-login { margin-top: 0.4rem; }
+    .register-prompt {
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--slate);
+      margin-top: 1.2rem;
+    }
+    .register-prompt a {
+      color: var(--rose);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .register-prompt a:hover { text-decoration: underline; }
+    .auth-logo-mobile {
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+      color: var(--navy);
+      font-size: 1.05rem;
+    }
+    .auth-logo-mobile .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--rose), var(--rose-light));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+    @media (max-width: 900px) { .auth-logo-mobile { display: flex; } }
+  </style>
+</head>
+<body>
+  <div class="toast-container" id="toastContainer"></div>
+
+  <main class="auth-page">
+    <!-- Left Panel -->
+    <div class="auth-left">
+      <div class="auth-left-content">
+        <div class="logo-mark">🏥</div>
+        <h1>Patient Monitoring<br/>System</h1>
+        <p>Track vitals and monitor patient health in one place.</p>
+        <div class="auth-feature-list">
+          <div class="auth-feature-item">
+            <div class="check">✓</div>
+            Real-time vital sign tracking
+          </div>
+          <div class="auth-feature-item">
+            <div class="check">✓</div>
+            AI-powered risk prediction
+          </div>
+          <div class="auth-feature-item">
+            <div class="check">✓</div>
+            Automated health reports
+          </div>
+          <div class="auth-feature-item">
+            <div class="check">✓</div>
+            Secure patient data storage
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="auth-right">
+      <div class="auth-form-box">
+        <div class="auth-logo-mobile">
+          <div class="brand-icon">🏥</div>
+          Patient Monitoring System
+        </div>
+        <h2 class="form-title">Welcome back</h2>
+        <p class="form-subtitle">Sign in to access your health dashboard</p>
+
+        <div id="loginAlert"></div>
+
+        <form class="login-form" id="loginForm" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="email">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="form-control"
+              placeholder="you@example.com"
+              autocomplete="email"
+              required
+            />
+            <span class="form-error" id="emailError">Please enter a valid email address.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <div class="password-wrapper">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                class="form-control"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+              />
+              <button type="button" class="password-toggle" id="togglePassword" aria-label="Toggle password visibility">👁</button>
+            </div>
+            <span class="form-error" id="passwordError">Password is required.</span>
+          </div>
+
+          <div class="forgot-link" onclick="handleForgotPassword()">Forgot your password?</div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-login" id="loginBtn">
+            Sign In
+          </button>
+
+          <div class="divider">or</div>
+
+          <button type="button" class="btn btn-secondary btn-block" onclick="window.location.href='register.html'">
+            Create New Account
+          </button>
+        </form>
+
+        <div class="register-prompt">
+          Don't have an account? <a onclick="window.location.href='register.html'">Register here</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="assets/js/auth/login.js"></script>
+</body>
+</html>

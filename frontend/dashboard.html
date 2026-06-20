@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Patient Monitoring System</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .dash-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 2rem 1.8rem;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    .dash-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+    }
+    .dash-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+    .dash-card:focus-visible {
+      outline: 2px solid var(--rose);
+      outline-offset: 3px;
+    }
+    .card-condition::before  { background: linear-gradient(90deg, var(--blue), var(--blue-light)); }
+    .card-history::before    { background: linear-gradient(90deg, #8B5CF6, #A78BFA); }
+    .card-report::before     { background: linear-gradient(90deg, var(--rose), var(--rose-light)); }
+
+    .dash-card-icon {
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+    .icon-blue   { background: var(--blue-pale); }
+    .icon-purple { background: #EDE9FE; }
+    .icon-rose   { background: var(--rose-pale); }
+
+    .dash-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 0.2rem;
+    }
+    .dash-card p {
+      font-size: 0.85rem;
+      color: var(--slate);
+      line-height: 1.5;
+    }
+    .card-arrow {
+      margin-top: auto;
+      font-size: 1.2rem;
+      color: var(--slate-light);
+      transition: transform 0.2s;
+    }
+    .dash-card:hover .card-arrow { transform: translateX(4px); color: var(--blue); }
+
+    /* Summary strip */
+    .summary-strip {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a4a7a 100%);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .strip-info { color: var(--white); }
+    .strip-info .label { font-size: 0.78rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.05em; }
+    .strip-info .value { font-size: 1.2rem; font-weight: 700; margin-top: 0.1rem; }
+    .strip-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.15); }
+
+    /* Quick vitals */
+    .quick-vitals-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .vital-mini {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(26,58,92,0.06);
+    }
+    .vital-mini-icon { font-size: 1.3rem; }
+    .vital-mini-info .vval { font-size: 1.05rem; font-weight: 700; color: var(--navy); }
+    .vital-mini-info .vlbl { font-size: 0.72rem; color: var(--slate); text-transform: uppercase; letter-spacing: 0.04em; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 1rem;
+      border-radius: 99px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .pill-healthy { background: #D1FAE5; color: #065F46; }
+    .pill-warning { background: #FEF3C7; color: #92400E; }
+    .pill-danger  { background: #FEE2E2; color: #991B1B; }
+    .pulse-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      animation: pulse-anim 1.5s infinite;
+    }
+    .pulse-green { background: #10B981; }
+    .pulse-amber { background: #F59E0B; }
+    .pulse-red   { background: #EF4444; }
+    @keyframes pulse-anim {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    /* Trend charts */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .chart-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      padding: 1.4rem 1.5rem;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(26,58,92,0.06);
+    }
+    .chart-card h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 0.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .chart-card .chart-sub {
+      font-size: 0.75rem;
+      color: var(--slate);
+      margin-bottom: 0.9rem;
+    }
+    .chart-canvas-wrap { position: relative; height: 220px; }
+    .chart-empty {
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--slate);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .summary-strip { flex-direction: column; align-items: flex-start; }
+      .strip-divider { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="brand-icon">🏥</div>
+      PatientMonitor
+    </div>
+    <div class="navbar-nav" id="navMenu">
+      <a href="dashboard.html" class="nav-link active">Dashboard</a>
+      <a href="current-condition.html" class="nav-link">Current Condition</a>
+      <a href="previous-history.html" class="nav-link">History</a>
+      <a href="health-insight.html" class="nav-link">Health Insight</a>
+      <a href="reports.html" class="nav-link">Reports</a>
+    </div>
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <div class="navbar-user">
+        <div class="avatar" id="navAvatar">—</div>
+        <span id="navName" style="color:rgba(255,255,255,0.85); font-size:0.85rem;"></span>
+      </div>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-content">
+      <h1 id="welcomeHeading">Good morning, Patient</h1>
+      <p>Here's an overview of your health status today.</p>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- Patient Summary Strip -->
+    <div class="summary-strip" id="summaryStrip">
+      <div class="strip-info">
+        <div class="label">Patient Name</div>
+        <div class="value" id="stripName">—</div>
+      </div>
+      <div class="strip-divider"></div>
+      <div class="strip-info">
+        <div class="label">Age</div>
+        <div class="value" id="stripAge">—</div>
+      </div>
+      <div class="strip-divider"></div>
+      <div class="strip-info">
+        <div class="label">BMI</div>
+        <div class="value" id="stripBMI">—</div>
+      </div>
+      <div class="strip-divider"></div>
+      <div class="strip-info">
+        <div class="label">Current Status</div>
+        <div class="value" id="stripStatus">
+          <span class="status-pill pill-healthy">
+            <span class="pulse-dot pulse-green"></span>
+            Loading...
+          </span>
+        </div>
+      </div>
+      <div style="margin-left:auto;">
+        <a href="reports.html" class="btn btn-rose btn-sm">+ Add Report</a>
+      </div>
+    </div>
+
+    <!-- Quick Vitals Row (from latest report) -->
+    <div class="section-heading">
+      <h2>Latest Vitals</h2>
+      <span class="text-sm text-slate" id="lastReportTime">No data yet</span>
+    </div>
+    <div class="quick-vitals-row" id="quickVitals">
+      <div class="vital-mini"><div class="vital-mini-icon">❤️</div><div class="vital-mini-info"><div class="vval" id="qHR">—</div><div class="vlbl">Heart Rate</div></div></div>
+      <div class="vital-mini"><div class="vital-mini-icon">🌡️</div><div class="vital-mini-info"><div class="vval" id="qTemp">—</div><div class="vlbl">Temperature</div></div></div>
+      <div class="vital-mini"><div class="vital-mini-icon">💧</div><div class="vital-mini-info"><div class="vval" id="qSpo2">—</div><div class="vlbl">SpO₂</div></div></div>
+      <div class="vital-mini"><div class="vital-mini-icon">⚠️</div><div class="vital-mini-info"><div class="vval" id="qRisk">—</div><div class="vlbl">Risk Level</div></div></div>
+      <div class="vital-mini"><div class="vital-mini-icon">🚶</div><div class="vital-mini-info"><div class="vval" id="qFall">—</div><div class="vlbl">Fall Detected</div></div></div>
+    </div>
+
+    <!-- 30-Day Trend Charts -->
+    <div class="section-heading" style="margin-top:0.5rem;">
+      <h2>Last 30 Days Trends</h2>
+      <span class="text-sm text-slate">Heart rate, temperature &amp; oxygen saturation</span>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>❤️ Heart Rate</h3>
+        <div class="chart-sub">bpm · last 30 days</div>
+        <div class="chart-canvas-wrap" id="wrapHR"><canvas id="chartHR"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>🌡️ Temperature</h3>
+        <div class="chart-sub">°F · last 30 days</div>
+        <div class="chart-canvas-wrap" id="wrapTemp"><canvas id="chartTemp"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>💧 Oxygen Saturation</h3>
+        <div class="chart-sub">SpO₂ % · last 30 days</div>
+        <div class="chart-canvas-wrap" id="wrapSpo2"><canvas id="chartSpo2"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Main Navigation Cards -->
+    <div class="section-heading" style="margin-top:0.5rem;">
+      <h2>Quick Access</h2>
+    </div>
+    <div class="dashboard-grid">
+      <a href="current-condition.html" class="dash-card card-condition">
+        <div class="dash-card-icon icon-blue">🩺</div>
+        <div>
+          <h3>Current Condition</h3>
+          <p>View your latest health status, vital signs, risk level, and personalised recommendations.</p>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+
+      <a href="previous-history.html" class="dash-card card-history">
+        <div class="dash-card-icon icon-purple">📋</div>
+        <div>
+          <h3>Previous History</h3>
+          <p>Browse your complete health history — see trends, past readings, and how your condition has changed over time.</p>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+
+      <a href="reports.html" class="dash-card card-report">
+        <div class="dash-card-icon icon-rose">📊</div>
+        <div>
+          <h3>Today's Report</h3>
+          <p>Submit today's vitals, get an AI-powered risk prediction, and automatically log it to your history.</p>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="assets/js/patient/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Dashboard — Patient Monitoring System</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    /* Summary strip — same navy gradient as the patient dashboard */
+    .summary-strip {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a4a7a 100%);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+    }
+    .strip-info { color: var(--white); }
+    .strip-info .label { font-size: 0.78rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.05em; }
+    .strip-info .value { font-size: 1.6rem; font-weight: 700; margin-top: 0.1rem; font-family: 'Playfair Display', Georgia, serif; }
+    .strip-divider { width: 1px; height: 40px; background: rgba(255,255,255,0.15); }
+
+    /* Toolbar */
+    .doc-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+      flex-wrap: wrap;
+    }
+    .doc-search {
+      flex: 1;
+      min-width: 220px;
+      max-width: 360px;
+      padding: 0.65rem 1rem;
+      border: 1.5px solid var(--slate-light);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      font-family: 'Inter', sans-serif;
+      background: var(--white);
+      transition: var(--transition);
+    }
+    .doc-search:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-pale); }
+
+    /* Patient card */
+    .patient-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+    .patient-card:hover { box-shadow: var(--shadow); }
+    .patient-head {
+      display: grid;
+      grid-template-columns: auto 1.6fr 1fr 1fr auto;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.1rem 1.4rem;
+      cursor: pointer;
+    }
+    .patient-avatar {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue), var(--rose));
+      color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1rem;
+    }
+    .patient-name { font-weight: 700; color: var(--navy); font-size: 1rem; }
+    .patient-sub  { font-size: 0.78rem; color: var(--slate); margin-top: 0.1rem; }
+    .patient-meta .m-label { font-size: 0.68rem; color: var(--slate); text-transform: uppercase; letter-spacing: 0.04em; }
+    .patient-meta .m-value { font-size: 0.9rem; color: var(--text-dark); font-weight: 600; margin-top: 0.1rem; }
+
+    .risk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 99px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+    .risk-badge .rb-score { font-size: 0.95rem; }
+    .risk-badge.no-data { background: var(--slate-light); color: var(--text-mid); }
+
+    .expand-arrow {
+      font-size: 1rem;
+      color: var(--slate);
+      transition: transform 0.25s;
+    }
+    .patient-card.open .expand-arrow { transform: rotate(90deg); }
+
+    /* Reports detail */
+    .patient-reports {
+      display: none;
+      border-top: 1px solid var(--line);
+      background: var(--ice);
+      padding: 1rem 1.4rem 1.4rem;
+    }
+    .patient-card.open .patient-reports { display: block; }
+    .reports-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+      background: var(--white);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .reports-table th {
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--slate);
+      background: var(--blue-pale);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .reports-table td {
+      padding: 0.6rem 0.8rem;
+      border-top: 1px solid var(--line);
+      color: var(--text-dark);
+      white-space: nowrap;
+    }
+    .score-pill {
+      display: inline-block;
+      min-width: 42px;
+      text-align: center;
+      padding: 0.15rem 0.5rem;
+      border-radius: 99px;
+      color: var(--white);
+      font-weight: 700;
+      font-size: 0.78rem;
+    }
+    .pred-tag {
+      padding: 0.12rem 0.55rem;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .pred-Normal    { background: #D1FAE5; color: #065F46; }
+    .pred-Warning   { background: #FEF3C7; color: #92400E; }
+    .pred-Emergency { background: #FEE2E2; color: #991B1B; }
+    .no-reports { color: var(--slate); font-size: 0.85rem; padding: 0.5rem 0; }
+
+    /* Emergency contacts */
+    .ec-block { margin-bottom: 1rem; }
+    .ec-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.7rem; }
+    .ec-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--rose);
+      border-radius: var(--radius);
+      padding: 0.7rem 0.9rem;
+    }
+    .ec-card .ec-name  { font-weight: 700; color: var(--navy); font-size: 0.9rem; }
+    .ec-card .ec-rel   { font-size: 0.72rem; color: var(--slate); }
+    .ec-card .ec-phone { font-size: 0.88rem; color: var(--text-dark); margin-top: 0.35rem; }
+    .ec-empty { color: var(--slate); font-size: 0.85rem; font-style: italic; }
+
+    /* SHAP explanation */
+    .shap-block { margin-top: 1rem; }
+    .shap-btn {
+      background: var(--navy);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0.45rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .shap-btn:hover { background: var(--blue); }
+    .shap-btn:disabled { opacity: 0.6; cursor: default; }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--slate);
+    }
+    .empty-state .es-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+    @media (max-width: 800px) {
+      .patient-head { grid-template-columns: auto 1fr auto; }
+      .patient-meta.hide-sm { display: none; }
+      .reports-table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="brand-icon">🩺</div>
+      PatientMonitor <span style="font-size:0.7rem; font-weight:600; opacity:0.7; margin-left:0.3rem;">DOCTOR</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:1rem; margin-left:auto;">
+      <div class="navbar-user">
+        <div class="avatar" id="navAvatar">Dr</div>
+        <span id="navName" style="color:rgba(255,255,255,0.85); font-size:0.85rem;"></span>
+      </div>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-content">
+      <h1 id="welcomeHeading">Doctor Dashboard</h1>
+      <p>Overview of every registered patient and their health reports.</p>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- Summary Strip -->
+    <div class="summary-strip">
+      <div class="strip-info">
+        <div class="label">Total Patients</div>
+        <div class="value" id="statPatients">—</div>
+      </div>
+      <div class="strip-divider"></div>
+      <div class="strip-info">
+        <div class="label">Total Reports</div>
+        <div class="value" id="statReports">—</div>
+      </div>
+      <div class="strip-divider"></div>
+      <div class="strip-info">
+        <div class="label">Patients At Risk</div>
+        <div class="value" id="statAtRisk" style="color:#FCA5A5;">—</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="doc-toolbar">
+      <div class="section-heading" style="margin:0;">
+        <h2>All Patients</h2>
+      </div>
+      <input type="text" id="searchInput" class="doc-search" placeholder="🔍 Search by name or email..." />
+    </div>
+
+    <!-- Patient list -->
+    <div id="patientList">
+      <div class="empty-state"><div class="es-icon">⏳</div>Loading patients...</div>
+    </div>
+
+  </div>
+
+  <script src="assets/js/shared/shap.js"></script>
+  <script src="assets/js/doctor/doctor-dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Current Condition — Patient Monitoring System</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .condition-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    /* Patient profile card */
+    .profile-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .profile-header {
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+      padding: 2rem 1.5rem;
+      text-align: center;
+      position: relative;
+    }
+    .profile-avatar {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: rgba(232,73,122,0.25);
+      border: 3px solid rgba(232,73,122,0.5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      margin: 0 auto 1rem;
+      color: var(--white);
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+    }
+    .profile-name {
+      color: var(--white);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+    .profile-sub { color: rgba(255,255,255,0.65); font-size: 0.82rem; }
+    .profile-body { padding: 1.4rem 1.5rem; }
+    .profile-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.65rem 0;
+      border-bottom: 1px solid rgba(26,58,92,0.06);
+      font-size: 0.875rem;
+    }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-row .label { color: var(--slate); font-weight: 500; }
+    .profile-row .value { color: var(--navy); font-weight: 600; }
+
+    /* Status banner */
+    .status-banner {
+      border-radius: var(--radius);
+      padding: 1rem 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .status-banner.healthy  { background: #D1FAE5; border: 1px solid #6EE7B7; }
+    .status-banner.warning  { background: #FEF3C7; border: 1px solid #FCD34D; }
+    .status-banner.emergency { background: #FEE2E2; border: 1px solid #FCA5A5; }
+    .status-icon { font-size: 1.8rem; }
+    .status-text h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.15rem; }
+    .status-text.healthy  h3 { color: #065F46; }
+    .status-text.warning  h3 { color: #92400E; }
+    .status-text.emergency h3 { color: #991B1B; }
+    .status-text p { font-size: 0.82rem; }
+    .status-text.healthy  p { color: #047857; }
+    .status-text.warning  p { color: #B45309; }
+    .status-text.emergency p { color: #DC2626; }
+
+    /* Vitals grid */
+    .vitals-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .vital-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(26,58,92,0.07);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .vital-icon-wrap {
+      width: 46px; height: 46px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .vital-details .val {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1.2;
+    }
+    .vital-details .unit { font-size: 0.75rem; color: var(--slate); margin-left: 0.15rem; }
+    .vital-details .lbl { font-size: 0.75rem; font-weight: 600; color: var(--slate); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.15rem; }
+
+    /* Recommendation box */
+    .recommendation-box {
+      background: linear-gradient(135deg, var(--blue-pale), var(--rose-pale));
+      border-radius: var(--radius);
+      padding: 1.4rem 1.6rem;
+      border: 1px solid rgba(46,109,164,0.1);
+    }
+    .recommendation-box h3 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--navy);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.7rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .recommendation-box p {
+      font-size: 0.9rem;
+      color: var(--text-mid);
+      line-height: 1.7;
+    }
+
+    .no-data-msg {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--slate);
+    }
+    .no-data-msg .nd-icon { font-size: 3rem; margin-bottom: 0.8rem; opacity: 0.5; }
+    .no-data-msg p { font-size: 0.9rem; margin-bottom: 1.2rem; }
+
+    @media (max-width: 1024px) {
+      .condition-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .vitals-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 420px) {
+      .vitals-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="brand-icon">🏥</div>
+      PatientMonitor
+    </div>
+    <div class="navbar-nav">
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <a href="current-condition.html" class="nav-link active">Current Condition</a>
+      <a href="previous-history.html" class="nav-link">History</a>
+      <a href="health-insight.html" class="nav-link">Health Insight</a>
+      <a href="reports.html" class="nav-link">Reports</a>
+    </div>
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <div class="navbar-user">
+        <div class="avatar" id="navAvatar">—</div>
+      </div>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-content">
+      <h1>Current Condition</h1>
+      <p>Your most recent health snapshot — updated each time you submit a report.</p>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="condition-layout">
+
+      <!-- Left: Patient Profile -->
+      <aside>
+        <div class="profile-card">
+          <div class="profile-header">
+            <div class="profile-avatar" id="profileInitials">?</div>
+            <div class="profile-name" id="profileName">Loading...</div>
+            <div class="profile-sub" id="profileSub">Patient</div>
+          </div>
+          <div class="profile-body">
+            <div class="profile-row"><span class="label">Age</span><span class="value" id="pAge">—</span></div>
+            <div class="profile-row"><span class="label">Gender</span><span class="value" id="pGender">—</span></div>
+            <div class="profile-row"><span class="label">Weight</span><span class="value" id="pWeight">—</span></div>
+            <div class="profile-row"><span class="label">Height</span><span class="value" id="pHeight">—</span></div>
+            <div class="profile-row"><span class="label">BMI</span><span class="value" id="pBMI">—</span></div>
+            <div class="profile-row"><span class="label">Phone</span><span class="value" id="pPhone">—</span></div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right: Vitals & Status -->
+      <div>
+        <!-- Status Banner -->
+        <div class="status-banner healthy" id="statusBanner">
+          <div class="status-icon" id="statusIcon">🩺</div>
+          <div class="status-text healthy" id="statusTextWrap">
+            <h3 id="statusTitle">Loading status...</h3>
+            <p id="statusDesc">Fetching your latest health data.</p>
+          </div>
+        </div>
+
+        <!-- No-data fallback (hidden if data exists) -->
+        <div id="noDataMsg" style="display:none;">
+          <div class="card no-data-msg">
+            <div class="nd-icon">📋</div>
+            <p>No health report submitted yet. Submit your first report to see your current condition here.</p>
+            <a href="reports.html" class="btn btn-primary">Submit First Report</a>
+          </div>
+        </div>
+
+        <!-- Vitals Grid -->
+        <div id="vitalsSection">
+          <div class="section-heading">
+            <h2>Vital Signs</h2>
+            <span class="text-sm text-slate" id="reportTimestamp">—</span>
+          </div>
+
+          <div class="vitals-grid">
+            <div class="vital-card">
+              <div class="vital-icon-wrap" style="background:var(--rose-pale);">❤️</div>
+              <div class="vital-details">
+                <div><span class="val" id="vHR">—</span><span class="unit">bpm</span></div>
+                <div class="lbl">Heart Rate</div>
+              </div>
+            </div>
+            <div class="vital-card">
+              <div class="vital-icon-wrap" style="background:#FEF3C7;">🌡️</div>
+              <div class="vital-details">
+                <div><span class="val" id="vTemp">—</span><span class="unit">°F</span></div>
+                <div class="lbl">Temperature</div>
+              </div>
+            </div>
+            <div class="vital-card">
+              <div class="vital-icon-wrap" style="background:var(--blue-pale);">💧</div>
+              <div class="vital-details">
+                <div><span class="val" id="vSpo2">—</span><span class="unit">%</span></div>
+                <div class="lbl">SpO₂</div>
+              </div>
+            </div>
+            <div class="vital-card">
+              <div class="vital-icon-wrap" style="background:#EDE9FE;">⚠️</div>
+              <div class="vital-details">
+                <div><span class="val" id="vRisk">—</span></div>
+                <div class="lbl">Risk Level</div>
+              </div>
+            </div>
+            <div class="vital-card">
+              <div class="vital-icon-wrap" style="background:#D1FAE5;">✅</div>
+              <div class="vital-details">
+                <div><span class="val" id="vStatus">—</span></div>
+                <div class="lbl">Status</div>
+              </div>
+            </div>
+            <div class="vital-card">
+              <div class="vital-icon-wrap" style="background:#FEE2E2;">🚶</div>
+              <div class="vital-details">
+                <div><span class="val" id="vFall">—</span></div>
+                <div class="lbl">Fall Detected</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recommendation -->
+          <div class="recommendation-box">
+            <h3>💡 Recommendation</h3>
+            <p id="vRecommendation">Fetching recommendation...</p>
+          </div>
+
+          <div style="margin-top:1.2rem; text-align:right;">
+            <a href="reports.html" class="btn btn-primary btn-sm">+ New Report</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Shared auth guard + data loader
+    function logout() {
+      localStorage.removeItem('patient');
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+    }
+
+    function showToast(msg, type='info') {
+      const tc = document.getElementById('toastContainer');
+      const t  = document.createElement('div');
+      t.className = `toast toast-${type}`;
+      t.innerHTML = (type==='success'?'✅':type==='error'?'❌':'ℹ️') + ' ' + msg;
+      tc.appendChild(t);
+      setTimeout(() => { t.classList.add('hiding'); setTimeout(()=>t.remove(), 300); }, 3500);
+    }
+
+    function applyStatus(risk) {
+      const banner = document.getElementById('statusBanner');
+      const textWrap = document.getElementById('statusTextWrap');
+      const icon = document.getElementById('statusIcon');
+      const title = document.getElementById('statusTitle');
+      const desc = document.getElementById('statusDesc');
+      banner.className = 'status-banner';
+      textWrap.className = 'status-text';
+      if (!risk || risk.toLowerCase() === 'normal') {
+        banner.classList.add('healthy');
+        textWrap.classList.add('healthy');
+        icon.textContent = '✅';
+        title.textContent = 'All Vitals Normal';
+        desc.textContent  = 'Your readings are within the healthy range. Keep up the good habits!';
+      } else if (risk.toLowerCase() === 'warning') {
+        banner.classList.add('warning');
+        textWrap.classList.add('warning');
+        icon.textContent = '⚠️';
+        title.textContent = 'Elevated Risk Detected';
+        desc.textContent  = 'Some readings are outside the normal range. Monitor closely and consult your physician if they persist.';
+      } else {
+        banner.classList.add('emergency');
+        textWrap.classList.add('emergency');
+        icon.textContent = '🚨';
+        title.textContent = 'Emergency Risk Level';
+        desc.textContent  = 'Critical readings detected. Please seek immediate medical attention.';
+      }
+    }
+
+    function calcBMI(weight, height) {
+      if (!weight || !height) return '—';
+      const bmi = (weight / Math.pow(height / 100, 2)).toFixed(1);
+      return bmi;
+    }
+
+    async function loadData() {
+      const patient = JSON.parse(localStorage.getItem('patient') || 'null');
+      const token   = localStorage.getItem('token');
+      if (!patient || !token) { window.location.href = 'login.html'; return; }
+
+      // Populate profile
+      const initials = patient.name ? patient.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '?';
+      document.getElementById('profileInitials').textContent = initials;
+      document.getElementById('navAvatar').textContent = initials;
+      document.getElementById('profileName').textContent = patient.name || '—';
+      document.getElementById('profileSub').textContent  = `Patient #${patient.patient_id || patient.id || '—'}`;
+      document.getElementById('pAge').textContent    = patient.age ? patient.age + ' yrs' : '—';
+      document.getElementById('pGender').textContent = patient.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : '—';
+      document.getElementById('pWeight').textContent = patient.weight ? patient.weight + ' kg' : '—';
+      document.getElementById('pHeight').textContent = patient.height ? patient.height + ' cm' : '—';
+      document.getElementById('pBMI').textContent    = calcBMI(patient.weight, patient.height);
+      document.getElementById('pPhone').textContent  = patient.phone || '—';
+
+      // Fetch latest report
+      try {
+        const res = await fetch('/api/patient/latest-report', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('No report');
+        const report = await res.json();
+
+        document.getElementById('noDataMsg').style.display    = 'none';
+        document.getElementById('vitalsSection').style.display = '';
+
+        const d = new Date(report.created_at);
+        document.getElementById('reportTimestamp').textContent = 'Last updated: ' + d.toLocaleString();
+        document.getElementById('vHR').textContent   = report.heart_rate || '—';
+        document.getElementById('vTemp').textContent = report.temperature || '—';
+        document.getElementById('vSpo2').textContent = report.oxygen || '—';
+        document.getElementById('vRisk').textContent = report.prediction || '—';
+        document.getElementById('vStatus').textContent = report.prediction || '—';
+        document.getElementById('vFall').textContent = report.fall_detected ? 'Yes' : 'No';
+        document.getElementById('vRecommendation').textContent = report.recommendation || 'No recommendation available.';
+        applyStatus(report.prediction);
+
+      } catch {
+        document.getElementById('noDataMsg').style.display    = '';
+        document.getElementById('vitalsSection').style.display = 'none';
+        applyStatus('normal');
+        document.getElementById('statusTitle').textContent = 'No Reports Yet';
+        document.getElementById('statusDesc').textContent  = 'Submit your first report to see your current condition.';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadData);
+  </script>
+</body>
+</html>

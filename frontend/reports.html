@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Today's Report — Patient Monitoring System</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .report-layout {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* Input form card */
+    .input-section .card { padding: 2rem; }
+    .form-section-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--rose);
+      margin: 1.2rem 0 0.8rem;
+    }
+    .form-section-title:first-child { margin-top: 0; }
+
+    /* Toggle (Fall Detected) */
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--ice);
+      border: 1.5px solid var(--slate-light);
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 1rem;
+    }
+    .toggle-group label { font-size: 0.9rem; color: var(--text-mid); font-weight: 500; }
+    .toggle-options { display: flex; gap: 0.4rem; }
+    .toggle-opt {
+      padding: 0.3rem 1rem;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--slate-light);
+      background: var(--white);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--slate);
+      transition: var(--transition);
+    }
+    .toggle-opt.active-yes { background: var(--danger); color: var(--white); border-color: var(--danger); }
+    .toggle-opt.active-no  { background: var(--success); color: var(--white); border-color: var(--success); }
+
+    /* Normal ranges hint */
+    .ranges-hint {
+      background: var(--blue-pale);
+      border-radius: var(--radius-sm);
+      padding: 0.9rem 1.1rem;
+      font-size: 0.8rem;
+      color: var(--text-mid);
+      margin-bottom: 1.2rem;
+      border-left: 3px solid var(--blue);
+    }
+    .ranges-hint strong { display: block; margin-bottom: 0.3rem; color: var(--navy); }
+    .ranges-hint ul { padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.2rem; }
+
+    /* Result panel */
+    .result-panel {
+      position: sticky;
+      top: 90px;
+    }
+    .result-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .result-header {
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+      padding: 1.4rem 1.6rem;
+      color: var(--white);
+    }
+    .result-header h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.15rem; }
+    .result-header p  { font-size: 0.8rem; color: rgba(255,255,255,0.65); }
+    .result-body { padding: 1.6rem; }
+
+    .risk-display {
+      text-align: center;
+      padding: 1.8rem 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1.4rem;
+      transition: all 0.4s;
+    }
+    .risk-display.normal    { background: #D1FAE5; }
+    .risk-display.warning   { background: #FEF3C7; }
+    .risk-display.emergency { background: #FEE2E2; }
+    .risk-display.pending   { background: var(--ice); }
+    .risk-display .risk-icon { font-size: 2.8rem; margin-bottom: 0.4rem; }
+    .risk-display .risk-label {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.15rem;
+    }
+    .risk-display.normal    .risk-label { color: #065F46; }
+    .risk-display.warning   .risk-label { color: #92400E; }
+    .risk-display.emergency .risk-label { color: #991B1B; }
+    .risk-display.pending   .risk-label { color: var(--slate); }
+    .risk-display .risk-sub { font-size: 0.82rem; color: var(--slate); }
+
+    /* Risk Score gauge */
+    .risk-score-box {
+      background: var(--ice);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1rem 1.1rem;
+      margin-bottom: 1.2rem;
+    }
+    .risk-score-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.4rem;
+    }
+    .risk-score-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--slate);
+    }
+    .risk-score-band {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.15rem 0.6rem;
+      border-radius: 99px;
+      color: var(--white);
+      background: var(--slate);
+    }
+    .risk-score-value {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--navy);
+    }
+    .risk-score-value #riskScoreNum { font-size: 2.4rem; }
+    .risk-score-max { font-size: 1rem; color: var(--slate); font-family: 'Inter', sans-serif; }
+    .risk-score-bar {
+      margin-top: 0.7rem;
+      height: 8px;
+      border-radius: 99px;
+      background: var(--slate-light);
+      overflow: hidden;
+    }
+    .risk-score-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 99px;
+      background: var(--success);
+      transition: width 0.5s ease, background 0.3s;
+    }
+
+    /* Health tips for the current risk level */
+    .risk-tips { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+    .tip-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--slate-light);
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 0.9rem;
+    }
+    .tip-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--slate);
+      margin-bottom: 0.25rem;
+    }
+    .tip-line {
+      font-size: 0.82rem;
+      color: var(--text-mid);
+      line-height: 1.5;
+    }
+
+    .result-vitals-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin-bottom: 1.2rem;
+    }
+    .rv-item {
+      background: var(--ice);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 0.8rem;
+    }
+    .rv-item .rvval { font-size: 1rem; font-weight: 700; color: var(--navy); }
+    .rv-item .rvlbl { font-size: 0.7rem; color: var(--slate); text-transform: uppercase; letter-spacing: 0.04em; }
+
+    .reco-box {
+      background: linear-gradient(135deg, var(--blue-pale), var(--rose-pale));
+      border-radius: var(--radius-sm);
+      padding: 1rem 1.1rem;
+      font-size: 0.85rem;
+      color: var(--text-mid);
+      line-height: 1.7;
+      border-left: 3px solid var(--blue);
+    }
+    .reco-box strong { display: block; color: var(--navy); margin-bottom: 0.3rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .loading-overlay {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.8);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      border-radius: var(--radius-lg);
+      gap: 0.8rem;
+      font-size: 0.9rem;
+      color: var(--navy);
+      font-weight: 600;
+      z-index: 10;
+      display: none;
+    }
+    .result-card { position: relative; }
+    .loading-overlay.show { display: flex; }
+    .loading-spinner-lg {
+      width: 40px; height: 40px;
+      border: 4px solid rgba(46,109,164,0.2);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @media (max-width: 1000px) {
+      .report-layout { grid-template-columns: 1fr; }
+      .result-panel { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="brand-icon">🏥</div>
+      PatientMonitor
+    </div>
+    <div class="navbar-nav">
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <a href="current-condition.html" class="nav-link">Current Condition</a>
+      <a href="previous-history.html" class="nav-link">History</a>
+      <a href="health-insight.html" class="nav-link">Health Insight</a>
+      <a href="reports.html" class="nav-link active">Reports</a>
+    </div>
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <div class="navbar-user">
+        <div class="avatar" id="navAvatar">—</div>
+      </div>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-content">
+      <h1>Today's Health Report</h1>
+      <p>Enter your vital signs. Our AI will assess your risk level and save the report automatically.</p>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="report-layout">
+
+      <!-- Input Form -->
+      <div class="input-section">
+        <div class="card">
+          <div class="ranges-hint">
+            <strong>📊 Normal Ranges Reference</strong>
+            <ul>
+              <li>Heart Rate: 60 – 100 bpm</li>
+              <li>Temperature: 97.8 – 99.1 °F</li>
+              <li>SpO₂: 95 – 100 %</li>
+            </ul>
+          </div>
+
+          <form id="reportForm" novalidate>
+
+            <div class="form-section-title">Vital Signs</div>
+
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label" for="heartRate">Heart Rate (bpm)</label>
+                <input type="number" id="heartRate" class="form-control" placeholder="e.g. 75" min="20" max="250" required />
+                <span class="form-error" id="hrError">Enter a valid heart rate (20–250).</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="temperature">Temperature (°F)</label>
+                <input type="number" id="temperature" class="form-control" placeholder="e.g. 98.6" min="90" max="115" step="0.1" required />
+                <span class="form-error" id="tempError">Enter a valid temperature (90–115°F).</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="oxygen">SpO₂ — Oxygen Saturation (%)</label>
+              <input type="number" id="oxygen" class="form-control" placeholder="e.g. 98" min="50" max="100" required />
+              <span class="form-hint">Normal range is 95–100%. Below 90% is critical.</span>
+              <span class="form-error" id="spo2Error">Enter a valid SpO₂ value (50–100).</span>
+            </div>
+
+            <div class="form-section-title">Fall Detection</div>
+
+            <div class="toggle-group">
+              <label>Was a fall detected?</label>
+              <div class="toggle-options">
+                <button type="button" class="toggle-opt" id="fallYes" onclick="setFall(true)">Yes</button>
+                <button type="button" class="toggle-opt active-no" id="fallNo"  onclick="setFall(false)">No</button>
+              </div>
+            </div>
+            <input type="hidden" id="fallDetected" value="false" />
+
+            <div class="form-section-title">Timestamp</div>
+
+            <div class="form-group">
+              <label class="form-label" for="reportTime">Report Time</label>
+              <input type="datetime-local" id="reportTime" class="form-control" required />
+              <span class="form-hint">Defaults to the current time.</span>
+            </div>
+
+            <div id="formAlert" style="margin-top:1rem;"></div>
+
+            <div style="display:flex; gap:1rem; margin-top:1.4rem;">
+              <button type="submit" class="btn btn-primary" style="flex:2;" id="submitBtn">
+                Generate Report &amp; Predict Risk
+              </button>
+              <button type="button" class="btn btn-secondary" style="flex:1;" onclick="resetForm()">
+                Clear
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Result Panel -->
+      <div class="result-panel">
+        <div class="result-card">
+          <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner-lg"></div>
+            Running AI prediction...
+          </div>
+
+          <div class="result-header">
+            <h3>Prediction Result</h3>
+            <p>AI-powered risk assessment from your vitals</p>
+          </div>
+          <div class="result-body">
+
+            <div class="risk-display pending" id="riskDisplay">
+              <div class="risk-icon">🩺</div>
+              <div class="risk-label" id="riskLabel">Awaiting Input</div>
+              <div class="risk-sub" id="riskSub">Submit your vitals to get a prediction</div>
+            </div>
+
+            <!-- Risk Score gauge (0–100) -->
+            <div class="risk-score-box" id="riskScoreBox" style="display:none;">
+              <div class="risk-score-head">
+                <span class="risk-score-title">⚖️ Risk Score</span>
+                <span class="risk-score-band" id="riskScoreBand">—</span>
+              </div>
+              <div class="risk-score-value">
+                <span id="riskScoreNum">0</span><span class="risk-score-max">/100</span>
+              </div>
+              <div class="risk-score-bar"><div class="risk-score-fill" id="riskScoreFill"></div></div>
+              <div class="risk-tips" id="riskTips"></div>
+            </div>
+
+            <div class="result-vitals-summary" id="vitalsSummary" style="display:none;">
+              <div class="rv-item"><div class="rvval" id="resHR">—</div><div class="rvlbl">❤️ Heart Rate</div></div>
+              <div class="rv-item"><div class="rvval" id="resTemp">—</div><div class="rvlbl">🌡️ Temperature</div></div>
+              <div class="rv-item"><div class="rvval" id="resSpo2">—</div><div class="rvlbl">💧 SpO₂</div></div>
+              <div class="rv-item"><div class="rvval" id="resFall">—</div><div class="rvlbl">🚶 Fall</div></div>
+            </div>
+
+            <div class="reco-box" id="recoBox" style="display:none;">
+              <strong>💡 Recommendation</strong>
+              <span id="recoText">—</span>
+            </div>
+
+            <!-- SHAP explanation: why the model gave this risk level -->
+            <div id="shapBox" style="margin-top:1rem;"></div>
+
+            <div id="savedNote" style="display:none; margin-top:1rem;">
+              <div class="alert alert-success">✅ Report saved to your health history.</div>
+              <div style="display:flex; gap:0.6rem; margin-top:0.6rem;">
+                <a href="current-condition.html" class="btn btn-primary btn-sm" style="flex:1; text-align:center;">View Condition</a>
+                <a href="previous-history.html"   class="btn btn-secondary btn-sm" style="flex:1; text-align:center;">View History</a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="assets/js/shared/shap.js"></script>
+  <script src="assets/js/patient/report.js"></script>
+</body>
+</html>

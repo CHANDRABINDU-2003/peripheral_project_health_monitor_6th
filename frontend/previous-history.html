@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Previous History — Patient Monitoring System</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <style>
+    .filter-bar {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 1rem 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1.5rem;
+      border: 1px solid rgba(26,58,92,0.07);
+    }
+    .filter-bar label { font-size: 0.8rem; font-weight: 600; color: var(--navy); white-space: nowrap; }
+    .filter-bar select, .filter-bar input {
+      padding: 0.45rem 0.8rem;
+      border: 1.5px solid var(--slate-light);
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      color: var(--text-dark);
+      background: var(--white);
+      cursor: pointer;
+    }
+    .filter-bar select:focus, .filter-bar input:focus {
+      outline: none;
+      border-color: var(--blue);
+    }
+    .filter-group { display: flex; align-items: center; gap: 0.5rem; }
+
+    /* Timeline style for history */
+    .history-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .history-entry {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(26,58,92,0.07);
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+    .history-entry:hover { box-shadow: var(--shadow); }
+    .history-entry-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.4rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .history-date-block {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .date-badge {
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+      color: var(--white);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.9rem;
+      text-align: center;
+      min-width: 64px;
+    }
+    .date-badge .day   { font-size: 1.3rem; font-weight: 700; line-height: 1; }
+    .date-badge .month { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.8; }
+    .history-meta h4 { font-size: 0.95rem; font-weight: 700; color: var(--navy); }
+    .history-meta p  { font-size: 0.78rem; color: var(--slate); margin-top: 0.1rem; }
+    .history-risk { display: flex; align-items: center; gap: 0.8rem; }
+    .chevron { font-size: 1rem; color: var(--slate); transition: transform 0.25s; }
+    .chevron.open { transform: rotate(180deg); }
+
+    .history-body {
+      border-top: 1px solid rgba(26,58,92,0.07);
+      padding: 1.2rem 1.4rem;
+      display: none;
+    }
+    .history-body.open { display: block; }
+    .history-vitals {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+    }
+    .hv-item {
+      background: var(--ice);
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 0.9rem;
+      text-align: center;
+    }
+    .hv-item .hvval { font-size: 1.1rem; font-weight: 700; color: var(--navy); }
+    .hv-item .hvlbl { font-size: 0.72rem; color: var(--slate); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.15rem; }
+    .history-reco {
+      background: var(--blue-pale);
+      border-radius: var(--radius-sm);
+      padding: 0.9rem 1.1rem;
+      font-size: 0.85rem;
+      color: var(--text-mid);
+      border-left: 3px solid var(--blue);
+    }
+    .history-reco strong { color: var(--navy); }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-box {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 1.2rem;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(26,58,92,0.06);
+      text-align: center;
+    }
+    .stat-box .sval { font-size: 1.6rem; font-weight: 700; color: var(--navy); }
+    .stat-box .slbl { font-size: 0.75rem; color: var(--slate); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.2rem; }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+    .page-btn {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--slate-light);
+      background: var(--white);
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--navy);
+      font-weight: 600;
+      transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .page-btn:hover, .page-btn.active { background: var(--blue); color: var(--white); border-color: var(--blue); }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <div class="brand-icon">🏥</div>
+      PatientMonitor
+    </div>
+    <div class="navbar-nav">
+      <a href="dashboard.html" class="nav-link">Dashboard</a>
+      <a href="current-condition.html" class="nav-link">Current Condition</a>
+      <a href="previous-history.html" class="nav-link active">History</a>
+      <a href="health-insight.html" class="nav-link">Health Insight</a>
+      <a href="reports.html" class="nav-link">Reports</a>
+    </div>
+    <div style="display:flex; align-items:center; gap:1rem;">
+      <div class="navbar-user">
+        <div class="avatar" id="navAvatar">—</div>
+      </div>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="page-header">
+    <div class="page-header-content">
+      <h1>Health History</h1>
+      <p>A complete log of your past vital readings, risk assessments, and recommendations.</p>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- Summary Stats -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-box">
+        <div class="sval" id="totalReports">—</div>
+        <div class="slbl">Total Reports</div>
+      </div>
+      <div class="stat-box">
+        <div class="sval" style="color:var(--success);" id="normalCount">—</div>
+        <div class="slbl">Normal Days</div>
+      </div>
+      <div class="stat-box">
+        <div class="sval" style="color:var(--warning);" id="warningCount">—</div>
+        <div class="slbl">Warning Days</div>
+      </div>
+      <div class="stat-box">
+        <div class="sval" style="color:var(--danger);" id="emergencyCount">—</div>
+        <div class="slbl">Emergency Days</div>
+      </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Risk Level</label>
+        <select id="filterRisk" onchange="applyFilter()">
+          <option value="">All</option>
+          <option value="Normal">Normal</option>
+          <option value="Warning">Warning</option>
+          <option value="Emergency">Emergency</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>From</label>
+        <input type="date" id="filterFrom" onchange="applyFilter()" />
+      </div>
+      <div class="filter-group">
+        <label>To</label>
+        <input type="date" id="filterTo" onchange="applyFilter()" />
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="clearFilter()">Clear</button>
+    </div>
+
+    <!-- History Entries -->
+    <div id="historyList" class="history-container"></div>
+
+    <!-- Empty State -->
+    <div id="historyEmpty" class="empty-state" style="display:none;">
+      <div class="empty-icon">📋</div>
+      <p>No health reports found. Submit your first report to start tracking.</p>
+      <a href="reports.html" class="btn btn-primary" style="margin-top:1rem;">Submit Report</a>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination"></div>
+
+  </div>
+
+  <script>
+    let allReports = [];
+    let filteredReports = [];
+    const PAGE_SIZE = 10;
+    let currentPage = 1;
+
+    function logout() {
+      localStorage.removeItem('patient');
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+    }
+
+    function showToast(msg, type='info') {
+      const tc = document.getElementById('toastContainer');
+      const t  = document.createElement('div');
+      t.className = `toast toast-${type}`;
+      t.innerHTML = (type==='success'?'✅':type==='error'?'❌':'ℹ️') + ' ' + msg;
+      tc.appendChild(t);
+      setTimeout(() => { t.classList.add('hiding'); setTimeout(()=>t.remove(), 300); }, 3500);
+    }
+
+    function riskBadge(risk) {
+      const r = (risk||'').toLowerCase();
+      if (r === 'normal')    return '<span class="badge badge-success">Normal</span>';
+      if (r === 'warning')   return '<span class="badge badge-warning">Warning</span>';
+      if (r === 'emergency') return '<span class="badge badge-danger">Emergency</span>';
+      return '<span class="badge badge-info">' + (risk||'Unknown') + '</span>';
+    }
+
+    function formatDate(ds) {
+      const d = new Date(ds);
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return { day: d.getDate(), month: months[d.getMonth()], full: d.toLocaleString() };
+    }
+
+    // Shows where a report came from: 📡 a device (ESP32/Pi) vs ✍️ manual entry.
+    function sourceBadge(source) {
+      const isDevice = source === 'device';
+      const label = isDevice ? '📡 Device' : '✍️ Manual';
+      const bg    = isDevice ? '#E0F2FE' : '#F1F5F9';
+      const fg    = isDevice ? '#0369A1' : '#475569';
+      return `<span style="display:inline-block;margin-left:0.5rem;padding:0.1rem 0.55rem;`
+           + `border-radius:99px;font-size:0.68rem;font-weight:700;`
+           + `background:${bg};color:${fg};vertical-align:middle;">${label}</span>`;
+    }
+
+    function renderHistory(reports) {
+      const container = document.getElementById('historyList');
+      const empty     = document.getElementById('historyEmpty');
+      if (!reports || reports.length === 0) {
+        container.innerHTML = '';
+        empty.style.display = '';
+        return;
+      }
+      empty.style.display = 'none';
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const slice = reports.slice(start, start + PAGE_SIZE);
+
+      container.innerHTML = slice.map((r, i) => {
+        const dt = formatDate(r.created_at);
+        const globalI = start + i;
+        return `
+          <div class="history-entry">
+            <div class="history-entry-header" onclick="toggleEntry(${globalI})">
+              <div class="history-date-block">
+                <div class="date-badge">
+                  <div class="day">${dt.day}</div>
+                  <div class="month">${dt.month}</div>
+                </div>
+                <div class="history-meta">
+                  <h4>Health Report ${sourceBadge(r.source)}</h4>
+                  <p>${dt.full}</p>
+                </div>
+              </div>
+              <div class="history-risk">
+                ${riskBadge(r.prediction)}
+                <span class="chevron" id="chev-${globalI}">▼</span>
+              </div>
+            </div>
+            <div class="history-body" id="body-${globalI}">
+              <div class="history-vitals">
+                <div class="hv-item">
+                  <div class="hvval">${r.heart_rate || '—'} <small style="font-size:0.7rem;color:var(--slate);">bpm</small></div>
+                  <div class="hvlbl">❤️ Heart Rate</div>
+                </div>
+                <div class="hv-item">
+                  <div class="hvval">${r.temperature || '—'} <small style="font-size:0.7rem;color:var(--slate);">°F</small></div>
+                  <div class="hvlbl">🌡️ Temperature</div>
+                </div>
+                <div class="hv-item">
+                  <div class="hvval">${r.oxygen || '—'} <small style="font-size:0.7rem;color:var(--slate);">%</small></div>
+                  <div class="hvlbl">💧 SpO₂</div>
+                </div>
+                <div class="hv-item">
+                  <div class="hvval">${r.fall_detected ? 'Yes' : 'No'}</div>
+                  <div class="hvlbl">🚶 Fall</div>
+                </div>
+              </div>
+              <div class="history-reco">
+                <strong>Recommendation:</strong> ${r.recommendation || 'No recommendation recorded.'}
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+
+      renderPagination(reports.length);
+    }
+
+    function toggleEntry(i) {
+      const body = document.getElementById('body-' + i);
+      const chev = document.getElementById('chev-' + i);
+      if (!body) return;
+      body.classList.toggle('open');
+      chev.classList.toggle('open');
+    }
+
+    function renderPagination(total) {
+      const pages = Math.ceil(total / PAGE_SIZE);
+      const pg = document.getElementById('pagination');
+      if (pages <= 1) { pg.innerHTML = ''; return; }
+      let html = `<button class="page-btn" onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+      for (let p = 1; p <= pages; p++) {
+        html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="changePage(${p})">${p}</button>`;
+      }
+      html += `<button class="page-btn" onclick="changePage(${currentPage+1})" ${currentPage===pages?'disabled':''}>›</button>`;
+      pg.innerHTML = html;
+    }
+
+    function changePage(p) {
+      if (p < 1) return;
+      const pages = Math.ceil(filteredReports.length / PAGE_SIZE);
+      if (p > pages) return;
+      currentPage = p;
+      renderHistory(filteredReports);
+    }
+
+    function applyFilter() {
+      const risk = document.getElementById('filterRisk').value.toLowerCase();
+      const from = document.getElementById('filterFrom').value;
+      const to   = document.getElementById('filterTo').value;
+      filteredReports = allReports.filter(r => {
+        if (risk && (r.prediction||'').toLowerCase() !== risk) return false;
+        if (from && new Date(r.created_at) < new Date(from)) return false;
+        if (to   && new Date(r.created_at) > new Date(to + 'T23:59:59')) return false;
+        return true;
+      });
+      currentPage = 1;
+      renderHistory(filteredReports);
+    }
+
+    function clearFilter() {
+      document.getElementById('filterRisk').value = '';
+      document.getElementById('filterFrom').value = '';
+      document.getElementById('filterTo').value   = '';
+      filteredReports = [...allReports];
+      currentPage = 1;
+      renderHistory(filteredReports);
+    }
+
+    function updateStats(reports) {
+      document.getElementById('totalReports').textContent   = reports.length;
+      document.getElementById('normalCount').textContent    = reports.filter(r=>(r.prediction||'').toLowerCase()==='normal').length;
+      document.getElementById('warningCount').textContent   = reports.filter(r=>(r.prediction||'').toLowerCase()==='warning').length;
+      document.getElementById('emergencyCount').textContent = reports.filter(r=>(r.prediction||'').toLowerCase()==='emergency').length;
+    }
+
+    async function loadHistory() {
+      const patient = JSON.parse(localStorage.getItem('patient') || 'null');
+      const token   = localStorage.getItem('token');
+      if (!patient || !token) { window.location.href = 'login.html'; return; }
+
+      const initials = patient.name ? patient.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2) : '?';
+      document.getElementById('navAvatar').textContent = initials;
+
+      try {
+        const res = await fetch('/api/patient/reports', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) throw new Error('Failed to fetch');
+        allReports = await res.json();
+        filteredReports = [...allReports];
+        updateStats(allReports);
+        renderHistory(filteredReports);
+      } catch {
+        showToast('Could not load history. Using demo data.', 'error');
+        // Demo data for visual testing
+        allReports = [
+          { created_at: '2025-06-10T08:00:00Z', heart_rate: 90, temperature: 98.0, oxygen: 99, fall_detected: false, prediction: 'Normal',    recommendation: 'Continue regular activity and hydration.' },
+          { created_at: '2025-06-11T09:15:00Z', heart_rate: 95, temperature: 99.0, oxygen: 97, fall_detected: false, prediction: 'Warning',   recommendation: 'Rest and monitor temperature. Consult if fever persists.' },
+          { created_at: '2025-06-12T10:30:00Z', heart_rate:120, temperature:101.0, oxygen: 92, fall_detected: true,  prediction: 'Emergency', recommendation: 'Seek immediate medical attention. Oxygen levels critically low.' },
+        ];
+        filteredReports = [...allReports];
+        updateStats(allReports);
+        renderHistory(filteredReports);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadHistory);
+  </script>
+</body>
+</html>
